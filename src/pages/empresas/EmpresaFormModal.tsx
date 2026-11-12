@@ -1,7 +1,10 @@
 import React, { FormEvent, useState } from 'react';
-import { Button, Field, Fieldset, Input, Stack, Text, Textarea } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { Button, DataList, Field, Fieldset, Input, Spinner, Stack, Text, Textarea } from '@chakra-ui/react';
 import { Empresa, EmpresaCreate, EmpresaUpdate } from '@/types';
-import { FormDialog, InlineError } from '@/components/ui';
+import { FormDialog, InlineError, StatusBadge } from '@/components/ui';
+import { companyService } from '@/services/companyService';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 interface Props {
   empresa?: Empresa;
@@ -13,6 +16,51 @@ interface Props {
 }
 
 const passwordBytes = (senha: string) => new TextEncoder().encode(senha).length;
+
+// Somente leitura: login e e-mail de quem administra a empresa.
+const AdministradoresEmpresa: React.FC<{ codempresa: number }> = ({ codempresa }) => {
+  const query = useQuery({
+    queryKey: ['empresa-administradores', codempresa],
+    queryFn: () => companyService.administradores(codempresa),
+  });
+
+  return (
+    <Fieldset.Root borderWidth="1px" borderRadius="lg" p="4">
+      <Fieldset.Legend fontWeight="semibold" px="1">
+        {query.data && query.data.length > 1 ? 'Administradores da empresa' : 'Administrador da empresa'}
+      </Fieldset.Legend>
+      <Fieldset.Content gap="4">
+        {query.isLoading ? (
+          <Spinner size="sm" color="brand.solid" />
+        ) : query.isError ? (
+          <Text fontSize="sm" color="fg.error">
+            {getApiErrorMessage(query.error, 'Não foi possível carregar o administrador.')}
+          </Text>
+        ) : !query.data?.length ? (
+          <Text fontSize="sm" color="fg.muted">
+            Nenhum administrador cadastrado.
+          </Text>
+        ) : (
+          query.data.map((admin) => (
+            <DataList.Root key={admin.codusuario} orientation="horizontal" size="sm" gap="2">
+              <DataList.Item>
+                <DataList.ItemLabel>Usuário</DataList.ItemLabel>
+                <DataList.ItemValue fontWeight="medium" gap="2" alignItems="center">
+                  {admin.usuario}
+                  {admin.ativo === 'N' && <StatusBadge tone="muted">Inativo</StatusBadge>}
+                </DataList.ItemValue>
+              </DataList.Item>
+              <DataList.Item>
+                <DataList.ItemLabel>E-mail</DataList.ItemLabel>
+                <DataList.ItemValue>{admin.email}</DataList.ItemValue>
+              </DataList.Item>
+            </DataList.Root>
+          ))
+        )}
+      </Fieldset.Content>
+    </Fieldset.Root>
+  );
+};
 
 // Cadastro cria empresa, schema, tabelas, parâmetros e o primeiro administrador
 // numa única transação. Edição envia só os campos que mudaram.
@@ -96,6 +144,8 @@ export const EmpresaFormModal: React.FC<Props> = ({ empresa, saving, error, onCr
         <Field.Label>Observação</Field.Label>
         <Textarea value={form.obs} onChange={set('obs')} maxLength={255} rows={2} />
       </Field.Root>
+
+      {empresa && <AdministradoresEmpresa codempresa={empresa.codempresa} />}
 
       {!empresa && (
         <Fieldset.Root borderWidth="1px" borderRadius="lg" p="4">

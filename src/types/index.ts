@@ -32,6 +32,15 @@ export interface Empresa {
   excluida: boolean;
 }
 
+// AdministradorResponse (GET /empresas/administradores/{codempresa})
+export interface AdministradorEmpresa {
+  codusuario: number;
+  nome: string;
+  usuario: string;
+  email: string;
+  ativo: SimNao | null;
+}
+
 export interface EmpresaPage {
   empresas: Empresa[];
   total: number;

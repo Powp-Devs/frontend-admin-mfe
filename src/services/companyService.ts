@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Empresa, EmpresaCreate, EmpresaFiltros, EmpresaPage, EmpresaUpdate, SimNao } from '@/types';
+import { AdministradorEmpresa, Empresa, EmpresaCreate, EmpresaFiltros, EmpresaPage, EmpresaUpdate, SimNao } from '@/types';
 
 export const companyService = {
   async listar(filtros: EmpresaFiltros): Promise<EmpresaPage> {
@@ -18,6 +18,12 @@ export const companyService = {
     const { data } = await api.get<Empresa>(`/empresas/buscar/${codempresa}`, {
       params: { incluir_excluidas: true },
     });
+    return data;
+  },
+
+  // Login e e-mail dos administradores da empresa (sem senha).
+  async administradores(codempresa: number): Promise<AdministradorEmpresa[]> {
+    const { data } = await api.get<AdministradorEmpresa[]>(`/empresas/administradores/${codempresa}`);
     return data;
   },
 

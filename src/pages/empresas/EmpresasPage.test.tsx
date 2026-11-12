@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import EmpresasPage from './EmpresasPage';
 import { companyService } from '@/services/companyService';
-import { byLabel, byText, click, openDialog, renderRoute, Rendered, rowAction, submit, type } from '@/test/render';
+import { byLabel, byText, click, flush, openDialog, renderRoute, Rendered, rowAction, submit, type } from '@/test/render';
 import { Empresa } from '@/types';
 
 const base: Empresa = {
@@ -82,6 +82,17 @@ describe('EmpresasPage', () => {
     expect(openDialog()?.textContent).toContain('dados ficam preservados');
     await click(byText(openDialog()!, 'button', 'Excluir'));
     expect(excluir).toHaveBeenCalledWith(1);
+  });
+
+  it('shows the company administrator login and e-mail when editing', async () => {
+    const administradores = vi
+      .spyOn(companyService, 'administradores')
+      .mockResolvedValue([{ codusuario: 9, nome: 'admin', usuario: 'admin_dev', email: 'admin@powp.dev', ativo: 'S' }]);
+    await rowAction('POWP Dev', 'Editar');
+    await flush(20);
+    expect(administradores).toHaveBeenCalledWith(1);
+    expect(openDialog()?.textContent).toContain('admin_dev');
+    expect(openDialog()?.textContent).toContain('admin@powp.dev');
   });
 
   const fillCreateForm = async (senha: string) => {
